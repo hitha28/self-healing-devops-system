@@ -145,3 +145,4 @@ __pycache__/
 *.pyc
 .env
 model.pkl
+.venv/
