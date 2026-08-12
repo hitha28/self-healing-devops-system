@@ -1,0 +1,13 @@
+{
+  "name": "metrics-collector",
+  "version": "1.0.0",
+  "description": "Polls container stats and writes them to MySQL",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js"
+  },
+  "dependencies": {
+    "dockerode": "^4.0.2",
+    "mysql2": "^3.10.0"
+  }
+}
