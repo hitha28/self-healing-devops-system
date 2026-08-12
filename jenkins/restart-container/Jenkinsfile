@@ -1,0 +1,34 @@
+pipeline {
+    agent any
+
+    parameters {
+        string(name: 'container', defaultValue: 'shs-target-app', description: 'Container to restart')
+    }
+
+    stages {
+        stage('Restart Container') {
+            steps {
+                echo "Restarting container: ${params.container}"
+                sh "docker restart ${params.container}"
+            }
+        }
+
+        stage('Verify Recovery') {
+            steps {
+                sh """
+                    sleep 5
+                    docker ps --filter "name=${params.container}" --filter "status=running" | grep ${params.container}
+                """
+            }
+        }
+    }
+
+    post {
+        success {
+            echo "Restart succeeded for ${params.container}"
+        }
+        failure {
+            echo "Restart FAILED for ${params.container}"
+        }
+    }
+}

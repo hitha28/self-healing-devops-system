@@ -1,0 +1,53 @@
+pipeline {
+    agent any
+
+    parameters {
+        string(name: 'container', defaultValue: 'shs-target-app', description: 'Container to remediate')
+        string(name: 'action', defaultValue: 'restart', description: 'Recovery action: restart or scale')
+    }
+
+    stages {
+        stage('Diagnose') {
+            steps {
+                echo "Remediating container: ${params.container}"
+                echo "Action requested: ${params.action}"
+            }
+        }
+
+        stage('Restart Container') {
+            when {
+                expression { params.action == 'restart' }
+            }
+            steps {
+                sh "docker restart ${params.container}"
+            }
+        }
+
+        stage('Scale Service') {
+            when {
+                expression { params.action == 'scale' }
+            }
+            steps {
+                sh "docker-compose up --scale target-app=2 -d"
+            }
+        }
+
+        stage('Verify Recovery') {
+            steps {
+                sh """
+                    sleep 5
+                    docker ps --filter "name=${params.container}" --filter "status=running" | grep ${params.container}
+                """
+            }
+        }
+    }
+
+    post {
+        success {
+            echo "Recovery succeeded for ${params.container}"
+        }
+        failure {
+            echo "Recovery FAILED for ${params.container}"
+        }
+    }
+}
