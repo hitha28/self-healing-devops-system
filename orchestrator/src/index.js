@@ -1,4 +1,5 @@
 const express = require('express');
+const cors = require('cors');
 const pool = require('./db');
 const { triggerJenkinsJob } = require('./jenkins');
 const { decideRecoveryAction } = require('./decisionEngine');
@@ -7,7 +8,8 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const ML_SERVICE_URL = process.env.ML_SERVICE_URL || 'http://localhost:5001';
 const CHECK_INTERVAL_MS = 10000;
-
+app.use(cors());
+app.use(express.json());
 app.use(express.json());
 
 // --- Dashboard API endpoints ---
