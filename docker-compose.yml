@@ -1,0 +1,81 @@
+version: "3.9"
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: shs-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-rootpass}
+      MYSQL_DATABASE: self_healing_db
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./db/schema.sql:/docker-entrypoint-initdb.d/schema.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  target-app:
+    build: ./app
+    container_name: shs-target-app
+    restart: unless-stopped
+    ports:
+      - "4000:4000"
+
+  metrics-collector:
+    build: ./metrics-collector
+    container_name: shs-metrics-collector
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      DB_HOST: mysql
+      DB_USER: root
+      DB_PASSWORD: ${MYSQL_ROOT_PASSWORD:-rootpass}
+      DB_NAME: self_healing_db
+      TARGET_CONTAINER: shs-target-app
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+
+  ml-service:
+    build: ./ml-service
+    container_name: shs-ml-service
+    restart: unless-stopped
+    ports:
+      - "5001:5001"
+
+  orchestrator:
+    build: ./orchestrator
+    container_name: shs-orchestrator
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      DB_HOST: mysql
+      DB_USER: root
+      DB_PASSWORD: ${MYSQL_ROOT_PASSWORD:-rootpass}
+      DB_NAME: self_healing_db
+      ML_SERVICE_URL: http://ml-service:5001
+      JENKINS_URL: ${JENKINS_URL}
+      JENKINS_USER: ${JENKINS_USER}
+      JENKINS_TOKEN: ${JENKINS_TOKEN}
+    ports:
+      - "3000:3000"
+
+  dashboard:
+    build: ./dashboard
+    container_name: shs-dashboard
+    restart: unless-stopped
+    depends_on:
+      - orchestrator
+    ports:
+      - "3001:3001"
+
+volumes:
+  mysql-data:
