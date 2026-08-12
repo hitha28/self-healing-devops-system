@@ -1,0 +1,13 @@
+{
+  "name": "orchestrator",
+  "version": "1.0.0",
+  "description": "Decision engine: detects anomalies via ML service and triggers Jenkins recovery",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "mysql2": "^3.10.0"
+  }
+}
